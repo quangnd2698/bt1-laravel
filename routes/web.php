@@ -17,4 +17,6 @@ Route::get('/', function () {
 });
 Route::resource('products', ProductController::class);
 
-
+Route::get('angular', function() {
+    return view('angular.index');
+});
