@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreProduct;
 use App\Product;
 
 class ProductController extends Controller
@@ -48,7 +49,28 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        dd($request->all());
+        $params = $request->only(
+            'name',
+            'code',
+            'brand',
+            'price',
+            'description',
+            'image',
+            'type',
+            'status'
+        );
+        if ($request->hasFile('image')) {
+            $filename = time() . '.' . $params['image']->getClientOriginalExtension();
+            $params['image']->move(public_path('images/product'), $filename);
+            $params['image'] = $filename;
+        }
+        $product = Product::create($params);
+
+        return response()->json([
+            'result' => $product->toArray(),
+            'status' => 'successful'
+        ]);
     }
 
     /**
