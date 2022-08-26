@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProduct;
+use App\Http\Requests\UpdateProduct;
 use App\Product;
 
 class ProductController extends Controller
@@ -47,9 +48,8 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreProduct $request)
     {
-        dd($request->all());
         $params = $request->only(
             'name',
             'code',
@@ -102,9 +102,36 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(UpdateProduct $request, $id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $params = $request->only(
+            'name',
+            'code',
+            'brand',
+            'price',
+            'description',
+            'image',
+            'type',
+            'status'
+        );
+        if ($request->hasFile('image')) {
+            $oldImagePath = public_path('images/product/' . $product->image);
+            if ($product->image && file_exists($oldImagePath)) {
+                unlink($oldImagePath);
+            }
+            $filename = time() . '.' . $params['image']->getClientOriginalExtension();
+            $params['image']->move(public_path('images/product'), $filename);
+            $params['image'] = $filename;
+        } elseif (empty($params['image'])) {
+            unset($params['image']);
+        }
+        $product->update($params);
+
+        return response()->json([
+            'result' => $product->toArray(),
+            'status' => 'successful'
+        ]);
     }
 
     /**
@@ -115,6 +142,15 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $imagePath = public_path('images/product/' . $product->image);
+        if ($product->image && file_exists($imagePath)) {
+            unlink($imagePath);
+        }
+        $product->delete();
+        return response()->json([
+            'result' => $product->toArray(),
+            'status' => 'successful'
+        ]);
     }
 }
